@@ -106,16 +106,20 @@ class CookieModel(QAbstractItemModel):
         return parentItem.childCount()
     
     def addCookie(self,infos,cookie,ua):
-        cur = self.rootItem;
+        cur = self.rootItem
+        #infos is (ssid,source,host)
+        #iteratively proceed
         for i in range(0,len(infos)):
             if cur.findVal(infos[i]) is None:
                 cur.appendChild(TreeItem(infos[i],cur,TreeItem.INDEX_TYPE))
             cur = cur.findVal(infos[i])
+        #now cur represents HOST item
         #according to policy
+        #currently cookie will be automatically overwritten
         if cur.childCount() >0:
             cur.child(0).setData(cookie)
         else:
-            cur.appendChild(TreeItem(infos[i],cur,TreeItem.COOKIE_TYPE))  
+            cur.appendChild(TreeItem(cookie,cur,TreeItem.COOKIE_TYPE))  
         
         cur = cur.child(0)
         if cur.findVal(ua) is None:
