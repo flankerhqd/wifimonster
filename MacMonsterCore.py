@@ -1,5 +1,6 @@
 from MonsterCore import MonsterCore
 from PyQt4.Qt import QMutex, QWaitCondition
+import MonsterLogger
 class MacMonsterCore(MonsterCore):
 	def __init__(self, filename, interface, arp_target,channel):
 		super(MacMonsterCore, self).__init__(filename, interface, arp_target)
@@ -8,7 +9,7 @@ class MacMonsterCore(MonsterCore):
 
 	def handleMonitor(self):
 		'''work around for mac os x, see https://github.com/diogomonica/py-cookieJsInjection/blob/master/OSx10.6_monitorMode.py'''
-		print "[*] Starting scan on channel %s" % self.channel
+		MonsterLogger.logger.info("[*] Starting scan on channel %s" % self.channel)
 		while(self.flag):
 			p = Popen("/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport " +"sniff " + self.channel, shell=True)
 			time.sleep(SLEEP_TIME)
@@ -40,10 +41,10 @@ class scanCookies ( threading.Thread ):
 		dirList=os.listdir(path)
 		for fileName in dirList:
 			if "airportSniff" in fileName:
-				print "sniffing "+fileName
+				MonsterLogger.logger.info("sniffing "+fileName)
 				try:
 					sniff(offline=path+fileName,filter="tcp port 80",prn=self.monster.handlepkt)
 				except NameError, e:
-					print "[-] No data found on pcap: " + str(e)
+					MonsterLogger.logger.error("[-] No data found on pcap: " + str(e))
 					pass
 				os.remove(path+fileName)

