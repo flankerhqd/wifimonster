@@ -9,13 +9,14 @@ Currently the tool is able to
 * one-click to launch a browser with sniffed cookie
 
 This tool does not require ARP attack, just silent sniffing, thus invisible to victim. Besides, the sniffing does not require
-one to associate one AP, making it even more diffcult to detect.
+one to associate AP, making it even more diffcult to detect.
 
 #Requirements:
 
-* PyQT >4
-* Scapy >2.0
+* PyQT >=4
+* Scapy >=2.0
 
+Tested on Backtrack5 and Mountain Lion
 
 #Usage:
 
