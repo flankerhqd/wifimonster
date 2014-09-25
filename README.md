@@ -29,3 +29,10 @@ e.g: python cookiemonster.py -i en0 [-c 1]
         
 On poping cookie window, right click on *useragent* items and select "launch attack" to open a browser using sniffed cookie.
 Sniffed passwords are stored in *monsterCookie.log*
+
+#Demo Screenshots:
+
+The following cookies and screenshots were captured in Wooyun Summit 2014 by sniffing hotel open wifi.
+
+![Cookies](/img/cookies.png?raw=true "Cookies captured")
+![Attack launched](/img/browser.jpg?raw=true "Cookies captured")
